@@ -51,7 +51,6 @@
         <RepositoryUrl>https://github.com/NYMEZIDE/IdentityServer4</RepositoryUrl>
         <PackageProjectUrl>https://github.com/NYMEZIDE/IdentityServer4</PackageProjectUrl>
         <PackageReleaseNotes>https://github.com/NYMEZIDE/IdentityServer4/releases</PackageReleaseNotes>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
         <RepositoryType>git</RepositoryType>
         <Copyright>Copyright 2024</Copyright>
