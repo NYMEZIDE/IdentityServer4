@@ -6,7 +6,7 @@ on:
     types: [published]
     
 jobs:
-  build-tests:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
@@ -15,7 +15,7 @@ jobs:
           { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
         ]
 
-    name: ${{ matrix.dotnet.framework }} – run tests
+    name: ${{ matrix.dotnet.framework }} – run build
 
     steps:
       - uses: actions/checkout@v2
@@ -34,7 +34,7 @@ jobs:
           dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
 
   build-and-publish:
-    needs: build-tests
+    needs: build
 
     runs-on: ubuntu-latest
 

@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  build-tests:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
@@ -15,7 +15,7 @@ jobs:
           { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
         ]
 
-    name: ${{ matrix.dotnet.framework }} – run tests
+    name: ${{ matrix.dotnet.framework }} – run build
 
     steps:
       - uses: actions/checkout@v2
@@ -35,7 +35,7 @@ jobs:
 
 
   release:
-    needs: build-tests
+    needs: build
 
     name: Create release
     

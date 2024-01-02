@@ -11,7 +11,7 @@ on:
       - master
 
 jobs:
-  run-tests:
+  run-build:
     runs-on: ubuntu-latest
 
     strategy:
@@ -20,13 +20,13 @@ jobs:
           { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
         ]
 
-    name: ${{ matrix.dotnet.framework }} – run tests
+    name: ${{ matrix.dotnet.framework }} – run build
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet.version }}
 
