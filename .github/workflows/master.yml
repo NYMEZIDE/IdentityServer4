@@ -1,17 +1,12 @@
-name: Continuous Integration
+name: master
 
 on:
   push:
     branches:
-      - "*"
-      - "*/*"
-      - "!master"
-  pull_request:
-    branches:
       - master
 
 jobs:
-  run-build:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
@@ -41,7 +36,6 @@ jobs:
             dotnet restore ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj --source https://api.nuget.org/v3/index.json
             dotnet restore ./src/IdentityServer4/IdentityServer4.csproj --source https://api.nuget.org/v3/index.json
 
-
       - name: Run build IdentityServer4.Storage
         run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
           
@@ -56,3 +50,48 @@ jobs:
           
       - name: Run build IdentityServer4
         run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+
+
+  release:
+    needs: build
+
+    name: Create release
+    
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: extract-version
+        run: |
+          version=$(cat ./src/Storage/IdentityServer4.Storage.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/EntityFramework/IdentityServer4.EntityFramework.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/IdentityServer4/IdentityServer4.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          echo "Package version: $version"
+          if [ -z "${version// }" ]; then exit 1; fi
+          echo "::set-output name=package_version::$version"
+      - name: Extract latest commit message
+        id: latest-commit
+        run: |
+          echo "${{ github.ref }}"
+          echo "::set-output name=message::$(git log --format=%B -n 1 ${{ github.event.after }})"
+      - uses: jwalton/gh-find-current-pr@v1
+        id: find-pr
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.extract-version.outputs.package_version }}
+          release_name: Release v${{ steps.extract-version.outputs.package_version }}
+          body: ${{ steps.find-pr.outputs.body || steps.latest-commit.outputs.message }}
+          draft: true
+          prerelease: false     
+          

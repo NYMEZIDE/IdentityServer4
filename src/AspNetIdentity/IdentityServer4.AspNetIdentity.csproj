@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+
+      <TargetFrameworks Condition="'$(Framework)' != 'net5.0'">net6.0</TargetFrameworks>
+      <TargetFramework Condition="'$(Framework)' == 'net6.0'">net6.0</TargetFramework>
+      <VersionPrefix>6.0.0</VersionPrefix>
+      <Title>Nymezide.IdentityServer4.AspNetIdentity</Title>
+
+  </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="../../../../icon.jpg">
+            <PackagePath>\</PackagePath>
+            <Pack>true</Pack>
+            <Link>icon.png</Link>
+        </None>
+        <None Include="..\..\README.md">
+            <PackagePath>\</PackagePath>
+            <Pack>true</Pack>
+            <Link>README.md</Link>
+        </None>
+    </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+    
+  <ItemGroup>
+
+	  <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+  </ItemGroup>
+    
+  <ItemGroup>
+    <ProjectReference Include="..\IdentityServer4\IdentityServer4.csproj" />
+  </ItemGroup>
+
+    <PropertyGroup Label="nuspec">
+        <PackageId>Nymezide.IdentityServer4.AspNetIdentity</PackageId>
+        <AssemblyTitle>Nymezide.IdentityServer4.AspNetIdentity</AssemblyTitle>
+        <Authors>Brock Allen;Dominick Baier;Ivan Filatov</Authors>
+        <Description>ASP.NET Core Identity Integration for IdentityServer4</Description>
+        <RepositoryUrl>https://github.com/NYMEZIDE/IdentityServer4</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/NYMEZIDE/IdentityServer4</PackageProjectUrl>
+        <PackageReleaseNotes>https://github.com/NYMEZIDE/IdentityServer4/releases</PackageReleaseNotes>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+        <RepositoryType>git</RepositoryType>
+        <Copyright>Copyright 2024</Copyright>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PackageIcon>icon.jpg</PackageIcon>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>OAuth2;OAuth 2.0;OpenID Connect;Security;Identity;IdentityServer;ASP.NET Identity;IdentityServer4</PackageTags>
+        <NeutralLanguage>en-US</NeutralLanguage>
+
+    </PropertyGroup>
+
+</Project>
