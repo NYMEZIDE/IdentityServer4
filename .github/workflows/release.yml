@@ -7,7 +7,7 @@ on:
     
 jobs:
 
-  build:
+  publish:
     runs-on: ubuntu-latest
 
     strategy:
@@ -16,7 +16,7 @@ jobs:
           { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
         ]
 
-    name: ${{ matrix.dotnet.framework }} – run build
+    name: ${{ matrix.dotnet.framework }} – run build and publish
 
     steps:
       - uses: actions/checkout@v4
@@ -29,43 +29,6 @@ jobs:
       - name: Display dotnet version
         run: dotnet --version
 
-      - name: Install dependencies
-        run: | 
-            dotnet restore ./src/Storage/IdentityServer4.Storage.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/EntityFramework/IdentityServer4.EntityFramework.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/IdentityServer4/IdentityServer4.csproj --source https://api.nuget.org/v3/index.json
-
-      - name: Run build IdentityServer4.Storage
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          
-      - name: Run build IdentityServer4.EntityFramework.Storage
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          
-      - name: Run build IdentityServer4.EntityFramework
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          
-      - name: Run build IdentityServer4.AspNetIdentity
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          
-      - name: Run build IdentityServer4
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-
-
-  publish:
-    needs: build
-
-    runs-on: ubuntu-latest
-
-    name: Run publish
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Display dotnet version
-        run: dotnet --version
-      
       - name: Extract version
         id: extract-version
         run: |
@@ -78,24 +41,39 @@ jobs:
           if [ -z "${version// }" ]; then exit 1; fi
           echo "::set-output name=package_version::$version"
 
-      - name: Run pack IdentityServer4.Storage
-        run: dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/Storage/IdentityServer4.Storage.csproj  
-          
-      - name: Run pack IdentityServer4.EntityFramework.Storage
-        run: dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj  
-          
-      - name: Run pack IdentityServer4.EntityFramework
-        run: dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/EntityFramework/IdentityServer4.EntityFramework.csproj  
-          
-      - name: Run pack IdentityServer4.AspNetIdentity
-        run: dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj  
-          
-      - name: Run pack IdentityServer4
-        run: dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/IdentityServer4/IdentityServer4.csproj     
+      - name: restore, build, pack, push IdentityServer4.Storage
+        run: | 
+            dotnet restore ./src/Storage/IdentityServer4.Storage.csproj --source https://api.nuget.org/v3/index.json
+            dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+            dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/Storage/IdentityServer4.Storage.csproj  
 
+      - name: restore, build, pack, push EntityFramework.Storage
+        run: |
+            dotnet restore ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj --source https://api.nuget.org/v3/index.json
+            dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+            dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj  
+
+      - name: restore, build, pack, push IdentityServer4.EntityFramework
+        run: |
+            dotnet restore ./src/EntityFramework/IdentityServer4.EntityFramework.csproj --source https://api.nuget.org/v3/index.json
+            dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+            dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/EntityFramework/IdentityServer4.EntityFramework.csproj
+
+      - name: restore, build, pack, push IdentityServer4.AspNetIdentity
+        run: |
+            dotnet restore ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj --source https://api.nuget.org/v3/index.json
+            dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+            dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj 
+            
+      - name: restore, build, pack, push IdentityServer4
+        run: |
+            dotnet restore ./src/IdentityServer4/IdentityServer4.csproj --source https://api.nuget.org/v3/index.json
+            dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+            dotnet pack --configuration Release --version-suffix "${{ steps.extract-version.outputs.package_version }}" --output out/ ./src/IdentityServer4/IdentityServer4.csproj 
+      
       - name: Run nuget push
         run: dotnet nuget push out/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-          
+
       - uses: actions/upload-artifact@v2
         with:
           name: NuGet package
