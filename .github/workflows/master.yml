@@ -18,20 +18,38 @@ jobs:
     name: ${{ matrix.dotnet.framework }} – run build
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet.version }}
 
-      - name: Run build
-        run: |
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+      - name: Display dotnet version
+        run: dotnet --version
+
+      - name: Install dependencies
+        run: | 
+            dotnet restore ./src/Storage/IdentityServer4.Storage.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/EntityFramework/IdentityServer4.EntityFramework.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/IdentityServer4/IdentityServer4.csproj --source https://api.nuget.org/v3/index.json
+
+      - name: Run build IdentityServer4.Storage
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4.EntityFramework.Storage
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4.EntityFramework
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4.AspNetIdentity
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
 
 
   release:
@@ -42,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
       - name: Extract version
         id: extract-version
