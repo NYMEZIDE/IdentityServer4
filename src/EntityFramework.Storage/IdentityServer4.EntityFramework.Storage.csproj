@@ -10,7 +10,7 @@
   </PropertyGroup>
 
     <ItemGroup>
-        <None Include="../../../../icon.jpg">
+        <None Include="../../icon.jpg">
             <PackagePath>\</PackagePath>
             <Pack>true</Pack>
             <Link>icon.png</Link>
@@ -19,6 +19,11 @@
             <PackagePath>\</PackagePath>
             <Pack>true</Pack>
             <Link>README.md</Link>
+        </None>
+        <None Include="..\..\LICENSE">
+            <PackagePath>\</PackagePath>
+            <Pack>true</Pack>
+            <Link>LICENSE</Link>
         </None>
     </ItemGroup>
   
