@@ -30,10 +30,23 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet.version }}
 
-      - name: Run build
-        run: |
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
-          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+      - name: Display dotnet version
+        run: dotnet --version
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Run build IdentityServer4.Storage
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4.EntityFramework.Storage
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4.EntityFramework
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4.AspNetIdentity
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          
+      - name: Run build IdentityServer4
+        run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
