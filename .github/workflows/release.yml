@@ -56,8 +56,14 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    name: Build and publish library to NuGet
-      
+    strategy:
+      matrix:
+        dotnet: [
+          { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
+        ]
+
+    name: ${{ matrix.dotnet.framework }} – Build and publish library to NuGet
+
     steps:
       - uses: actions/checkout@v4
 
