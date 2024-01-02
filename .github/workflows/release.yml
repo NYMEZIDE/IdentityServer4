@@ -6,7 +6,7 @@ on:
     types: [published]
     
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
 
     strategy:
@@ -15,7 +15,7 @@ jobs:
           { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
         ]
 
-    name: ${{ matrix.dotnet.framework }} – run build
+    name: ${{ matrix.dotnet.framework }} – run build and publish
 
     steps:
       - uses: actions/checkout@v4
@@ -51,22 +51,6 @@ jobs:
       - name: Run build IdentityServer4
         run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
 
-  build-and-publish:
-    needs: build
-
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        dotnetpublish: [
-          { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
-        ]
-
-    name: ${{ matrix.dotnetpublish.framework }} – Build and publish library to NuGet
-
-    steps:
-      - uses: actions/checkout@v4
-
       - name: Extract version
         id: extract-version
         run: |
@@ -89,35 +73,6 @@ jobs:
           echo "Version suffix: $suffix"
           if [ -z "${suffix// }" ] && [ $prerelease == "true" ]; then exit 1; fi
           echo "::set-output name=version_suffix::$suffix"
-          
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: ${{ matrix.dotnetpublish.version }}
-
-      - name: Install dependencies
-        run: | 
-            dotnet restore ./src/Storage/IdentityServer4.Storage.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/EntityFramework/IdentityServer4.EntityFramework.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj --source https://api.nuget.org/v3/index.json
-            dotnet restore ./src/IdentityServer4/IdentityServer4.csproj --source https://api.nuget.org/v3/index.json
-
-      - name: Run build IdentityServer4.Storage
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnetpublish.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnetpublish.conditionframework }}
-          
-      - name: Run build IdentityServer4.EntityFramework.Storage
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnetpublish.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnetpublish.conditionframework }}
-          
-      - name: Run build IdentityServer4.EntityFramework
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnetpublish.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnetpublish.conditionframework }}
-          
-      - name: Run build IdentityServer4.AspNetIdentity
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnetpublish.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnetpublish.conditionframework }}
-          
-      - name: Run build IdentityServer4
-        run: dotnet build --configuration Release --framework ${{ matrix.dotnetpublish.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnetpublish.conditionframework }}
-
 
       - name: Run pack IdentityServer4.Storage
         run: dotnet pack --no-restore --no-build --configuration Release --version-suffix "${{ steps.extract-version-suffix.outputs.version_suffix }}" --output out/ ./src/Storage/IdentityServer4.Storage.csproj  
@@ -135,14 +90,12 @@ jobs:
         run: dotnet pack --no-restore --no-build --configuration Release --version-suffix "${{ steps.extract-version-suffix.outputs.version_suffix }}" --output out/ ./src/IdentityServer4/IdentityServer4.csproj     
 
       - name: Run nuget push
-        run: dotnet nuget push out/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}                         
-         
+        run: dotnet nuget push out/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
           
       - uses: actions/upload-artifact@v2
         with:
           name: NuGet package
           path: out/
-
 
   upload-release-assets:
     needs: build-and-publish
