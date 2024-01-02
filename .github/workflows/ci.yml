@@ -34,7 +34,13 @@ jobs:
         run: dotnet --version
 
       - name: Install dependencies
-        run: dotnet restore
+        run: | 
+            dotnet restore ./src/Storage/IdentityServer4.Storage.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/EntityFramework/IdentityServer4.EntityFramework.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj --source https://api.nuget.org/v3/index.json
+            dotnet restore ./src/IdentityServer4/IdentityServer4.csproj --source https://api.nuget.org/v3/index.json
+
 
       - name: Run build IdentityServer4.Storage
         run: dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
