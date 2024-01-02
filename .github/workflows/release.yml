@@ -1,0 +1,133 @@
+
+name: release
+
+on:
+  release:
+    types: [published]
+    
+jobs:
+  build-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        dotnet: [
+          { framework: net6.0, conditionframework: net6.0, version: 6.0.x },
+        ]
+
+    name: ${{ matrix.dotnet.framework }} – run tests
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet.version }}
+
+      - name: Run build
+        run: |
+          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/Storage/IdentityServer4.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/EntityFramework/IdentityServer4.EntityFramework.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+          dotnet build --configuration Release --framework ${{ matrix.dotnet.framework }} ./src/IdentityServer4/IdentityServer4.csproj /p:Framework=${{ matrix.dotnet.conditionframework }}
+
+  build-and-publish:
+    needs: build-tests
+
+    runs-on: ubuntu-latest
+
+    name: Build and publish library to NuGet
+      
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Extract version
+        id: extract-version
+        run: |
+          version=$(cat ./src/Storage/IdentityServer4.Storage.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/EntityFramework/IdentityServer4.EntityFramework.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          version=$(cat ./src/IdentityServer4/IdentityServer4.csproj | grep "<VersionPrefix>" | sed -e "s/ *<\/*VersionPrefix>//g")
+          echo "Package version: $version"
+          if [ -z "${version// }" ]; then exit 1; fi
+          echo "::set-output name=package_version::$version"
+      - name: Extract package suffix from tag
+        id: extract-version-suffix
+        run: |
+          ref=${{ github.ref }}
+          prerelease=${{ github.event.release.prerelease }}
+          version=${{ steps.extract-version.outputs.package_version }}
+          shopt -s extglob
+          suffix=${ref##*/v"${version}"?(-)}
+          echo "Version suffix: $suffix"
+          if [ -z "${suffix// }" ] && [ $prerelease == "true" ]; then exit 1; fi
+          echo "::set-output name=version_suffix::$suffix"
+          
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Build and publish library to NuGet
+        run: |
+          dotnet build --configuration Release ./src/Storage/IdentityServer4.Storage.csproj
+          dotnet build --configuration Release ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj
+          dotnet build --configuration Release ./src/EntityFramework/IdentityServer4.EntityFramework.csproj
+          dotnet build --configuration Release ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj
+          dotnet build --configuration Release ./src/IdentityServer4/IdentityServer4.csproj
+
+          dotnet pack --no-restore --no-build --configuration Release --version-suffix "${{ steps.extract-version-suffix.outputs.version_suffix }}" --output out/ ./src/Storage/IdentityServer4.Storage.csproj                                  
+          dotnet pack --no-restore --no-build --configuration Release --version-suffix "${{ steps.extract-version-suffix.outputs.version_suffix }}" --output out/ ./src/EntityFramework.Storage/IdentityServer4.EntityFramework.Storage.csproj  
+          dotnet pack --no-restore --no-build --configuration Release --version-suffix "${{ steps.extract-version-suffix.outputs.version_suffix }}" --output out/ ./src/EntityFramework/IdentityServer4.EntityFramework.csproj                  
+          dotnet pack --no-restore --no-build --configuration Release --version-suffix "${{ steps.extract-version-suffix.outputs.version_suffix }}" --output out/ ./src/AspNetIdentity/IdentityServer4.AspNetIdentity.csproj                    
+          dotnet pack --no-restore --no-build --configuration Release --version-suffix "${{ steps.extract-version-suffix.outputs.version_suffix }}" --output out/ ./src/IdentityServer4/IdentityServer4.csproj                                  
+          
+          dotnet nuget push out/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+          
+      - uses: actions/upload-artifact@v2
+        with:
+          name: NuGet package
+          path: out/
+
+
+  upload-release-assets:
+    needs: build-and-publish
+
+    runs-on: ubuntu-latest
+
+    name: Upload release assets
+
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: NuGet package
+          path: out
+
+      - name: Get package
+        id: get-package
+        run: |
+          echo "::set-output name=package::$(ls out/ | grep '\.nupkg')"
+          echo "::set-output name=symbols::$(ls out/ | grep '\.snupkg')"
+      - name: Upload package asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./out/${{ steps.get-package.outputs.package }}
+          asset_name: ${{ steps.get-package.outputs.package }}
+          asset_content_type: application/zip
+
+      - name: Upload symbols asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./out/${{ steps.get-package.outputs.symbols }}
+          asset_name: ${{ steps.get-package.outputs.symbols }}
+          asset_content_type: application/zip
+      
